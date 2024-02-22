@@ -4,14 +4,110 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>PROJETO FINAL ADA</title>
+    <style>        
+        .message-container {
+            display: flex;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .message-avatar {
+            border-radius: 50%;
+            width: 50px; 
+            height: 50px;
+            margin-right: 10px;
+        }
+
+        .message-content {
+            background-color: #f0f0f0;
+            border-radius: 10px;
+            padding: 10px;
+        }
+
+        .message-name {
+            font-weight: bold;
+        }
+
+        .message-text, .message-created-at {
+            margin-top: 5px;
+        }
+    </style>
 </head>
 <body>
+    <div id="messages"></div>
     <script src="https://cdn.socket.io/4.7.4/socket.io.min.js" integrity="sha384-Gr6Lu2Ajx28mzwyVR8CFkULdCU7kMlZ9UthllibdOSo6qAiN+yXNHqtgdTvFXMT4" crossorigin="anonymous"></script>
     <script>
         const socket = io("http://localhost:3333");
-        socket.on("new_message", data => console.log(data));
-    </script>
 
-    
+        socket.on("new_message", messageData => {
+            fetchUserProfileById(messageData.user_id)
+                .then(userData => {
+                    displayMessage(messageData, userData);
+                })
+                .catch(error => console.error('Error fetching user profile:', error));
+        });
+
+        function displayMessage(messageData, userData) {
+            const messagesDiv = document.getElementById('messages');
+            const messageContainer = document.createElement('div');
+            messageContainer.classList.add('message-container');
+
+            const avatar = document.createElement('img');
+            avatar.src = userData.avatar_url;
+            avatar.onerror = () => avatar.style.display = 'none';
+            avatar.classList.add('message-avatar');
+
+            const messageContent = document.createElement('div');
+            messageContent.classList.add('message-content');
+
+            const messageName = document.createElement('div');
+            messageName.classList.add('message-name');
+            messageName.textContent = userData.name;
+
+            const messageText = document.createElement('div');
+            messageText.classList.add('message-text');
+            messageText.textContent = messageData.text;
+
+            const messageCreatedAt = document.createElement('div');
+            messageCreatedAt.classList.add('message-created-at');
+            messageCreatedAt.textContent = formatDate(messageData.created_at);
+
+            messageContent.appendChild(messageName);
+            messageContent.appendChild(messageText);
+            messageContent.appendChild(messageCreatedAt);
+
+            messageContainer.appendChild(avatar);
+            messageContainer.appendChild(messageContent);
+
+            messagesDiv.appendChild(messageContainer);
+        }
+
+        function formatDate(isoString) {
+            const date = new Date(isoString);
+            return date.toLocaleString();
+        }
+
+        function fetchUserProfileById(userId) {
+            return fetch(`http://localhost:3333/profile/${userId}`)
+                .then(response => response.json());
+        }
+
+        function fetchMessages() {
+            fetch('http://localhost:3333/messages')
+                .then(response => response.json())
+                .then(responseObject => {
+                    const messages = responseObject.data;
+                    messages.forEach(msg => {
+                        fetchUserProfileById(msg.user_id)
+                            .then(userData => {
+                                displayMessage(msg, userData);
+                            });
+                    });
+                })
+                .catch(error => console.error('Error fetching messages:', error));
+        }
+
+        fetchMessages();
+    </script>
 </body>
 </html>

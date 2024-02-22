@@ -5,6 +5,7 @@ import { GetMessagesController } from "./controllers/GetMessagesController";
 import { DeleteMessageController } from "./controllers/DeleteMessageController";
 import { ensureAuthenticated } from "./middleware/ensureAuthenticated";
 import { ProfileUserController } from "./controllers/ProfileUserController";
+import { GetUserProfileController } from "./controllers/GetUserProfileController";
 
 const router = Router();
 
@@ -18,6 +19,8 @@ router.delete('/messages/:id', ensureAuthenticated, new DeleteMessageController(
 
 router.put('/messages/:id', ensureAuthenticated, new UpdateMessageController().handle);
 
-router.get("/profile", ensureAuthenticated, new ProfileUserController().handle);
+router.get("/profile/internal", ensureAuthenticated, new ProfileUserController().handle);
+
+router.get("/profile/:userId", new GetUserProfileController().handle);
 
 export { router };
